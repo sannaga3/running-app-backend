@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "records",
+  "info": {
+    "singularName": "record",
+    "pluralName": "records",
+    "displayName": "record",
+    "description": "running record"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "date": {
+      "type": "date",
+      "required": true
+    },
+    "distance": {
+      "type": "float",
+      "default": 0,
+      "required": true,
+      "min": 0
+    },
+    "time": {
+      "type": "time",
+      "required": true
+    },
+    "per_time": {
+      "type": "time",
+      "required": true
+    },
+    "step": {
+      "type": "integer",
+      "default": 0,
+      "required": true,
+      "min": 0
+    },
+    "user_id": {
+      "type": "biginteger",
+      "required": true,
+      "min": "1"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "records"
+    }
+  }
+}
