@@ -32,9 +32,9 @@
     },
     "step": {
       "type": "integer",
-      "default": 0,
-      "required": true,
-      "min": 0
+      "required": false,
+      "min": 0,
+      "default": 0
     },
     "user_id": {
       "type": "biginteger",
@@ -46,6 +46,11 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
       "inversedBy": "records"
+    },
+    "cal": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
     }
   }
 }
