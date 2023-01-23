@@ -9,6 +9,40 @@ const record = require("../routes/record");
 const { createCoreController } = require("@strapi/strapi").factories;
 
 module.exports = createCoreController("api::record.record", ({ strapi }) => ({
+  async findMyRecords(ctx) {
+    const params = ctx.request.body;
+    const searchParams = params.searchParams;
+    const sortParams = params.sortParams;
+    const userId = params.userId;
+    const page = params.meta.page;
+    const pageSize = params.meta.pageSize;
+
+    let searchParamsTimes = null;
+    if (
+      searchParams.time_min ||
+      searchParams.time_max ||
+      searchParams.per_time_min ||
+      searchParams.per_time_max
+    ) {
+      searchParamsTimes = convertSearchParamsTimeToSecond(searchParams);
+    }
+
+    const filters = makeFilters(searchParams, userId, searchParamsTimes);
+
+    const convertedSortParams = Object.fromEntries(
+      sortParams.map((param) => [param.name, param.sort])
+    );
+
+    const entries = await strapi.entityService.findPage("api::record.record", {
+      fields: ["id", "date", "distance", "time", "per_time", "step", "cal"],
+      filters: filters,
+      sort: convertedSortParams,
+      page,
+      pageSize,
+    });
+
+    return entries;
+  },
   async findTotalRecords(ctx) {
     const params = ctx.request.body;
 
@@ -215,4 +249,98 @@ const secondConvertToTime = (second) => {
   const convertedToTime = `${hour}:${minute}:${remainderSecond}`;
 
   return convertedToTime;
+};
+
+const convertSearchParamsTimeToSecond = (searchParams) => {
+  let convertedTimeFilters = [];
+
+  if (searchParams?.time_min) {
+    const minTime = timeConvertToSecond(searchParams.time_min);
+    convertedTimeFilters.minTime = minTime;
+  }
+  if (searchParams?.time_max) {
+    const maxTime = timeConvertToSecond(searchParams.time_max);
+    convertedTimeFilters.maxTime = maxTime;
+  }
+  if (searchParams?.time_min) {
+    const minPerTime = timeConvertToSecond(searchParams.per_time_min);
+    convertedTimeFilters.minPerTime = minPerTime;
+  }
+
+  if (searchParams?.time_max) {
+    const maxPerTime = timeConvertToSecond(searchParams.per_time_max);
+    convertedTimeFilters.maxPerTime = maxPerTime;
+  }
+
+  return convertedTimeFilters;
+};
+
+const makeFilters = (searchParams, userId, searchParamsTimes = null) => {
+  let filters = {
+    user_id: { $eq: userId },
+  };
+
+  if (searchParams.date_min && searchParams.date_max) {
+    filters.date = {
+      $between: [searchParams.date_min, searchParams.date_max],
+    };
+  } else if (searchParams.date_min) {
+    filters.date = { $gte: searchParams.date_min };
+  } else if (searchParams.date_max) {
+    filters.date = { $lte: searchParams.date_max };
+  }
+
+  if (searchParams.distance_min && searchParams.distance_max) {
+    filters.distance = {
+      $between: [searchParams.distance_min, searchParams.distance_max],
+    };
+  } else if (searchParams.distance_min) {
+    filters.distance = { $gte: searchParams.distance_min };
+  } else if (searchParams.distance_max) {
+    filters.distance = { $lte: searchParams.distance_max };
+  }
+
+  if (searchParamsTimes) {
+    if (searchParamsTimes.minTime && searchParamsTimes.maxTime) {
+      filters.time_second = {
+        $between: [searchParamsTimes.minTime, searchParamsTimes.maxTime],
+      };
+    } else if (searchParamsTimes.minTime) {
+      filters.time_second = { $gte: searchParamsTimes.minTime };
+    } else if (searchParamsTimes.maxTime) {
+      filters.time_second = { $lte: searchParamsTimes.maxTime };
+    }
+
+    if (searchParamsTimes.minPerTime && searchParamsTimes.maxPerTime) {
+      filters.per_time_second = {
+        $between: [searchParamsTimes.minPerTime, searchParamsTimes.maxPerTime],
+      };
+    } else if (searchParamsTimes.minPerTime) {
+      filters.per_time_second = { $gte: searchParamsTimes.minPerTime };
+    } else if (searchParamsTimes.maxPerTime) {
+      filters.per_time_second = { $lte: searchParamsTimes.maxPerTime };
+    }
+  }
+
+  if (searchParams.step_min && searchParams.step_max) {
+    filters.step = {
+      $between: [searchParams.step_min, searchParams.step_max],
+    };
+  } else if (searchParams.step_min) {
+    filters.step = { $gte: searchParams.step_min };
+  } else if (searchParams.step_max) {
+    filters.step = { $lte: searchParams.step_max };
+  }
+
+  if (searchParams.cal_min && searchParams.cal_max) {
+    filters.cal = {
+      $between: [searchParams.cal_min, searchParams.cal_max],
+    };
+  } else if (searchParams.cal_min) {
+    filters.cal = { $gte: searchParams.cal_min };
+  } else if (searchParams.cal_max) {
+    filters.cal = { $lte: searchParams.cal_max };
+  }
+
+  return filters;
 };
