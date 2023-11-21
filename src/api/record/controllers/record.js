@@ -174,7 +174,7 @@ const calculateTotalValues = (
     averageStep,
     averageCal,
   ];
-  averageValues = totalValues.filter((value) => value !== null);
+  averageValues = averageValues.filter((value) => value !== null);
 
   return [totalValues, averageValues];
 };
